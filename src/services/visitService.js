@@ -2,6 +2,7 @@ const Visit = require("../models/Visit");
 const Customer = require("../models/Customer");
 const Vehicle = require("../models/Vehicle");
 const Service = require("../models/Service");
+const NotificationService = require('./notificationService');
 
 class VisitService {
   static async createVisit(data) {
@@ -48,6 +49,9 @@ class VisitService {
     });
 
     await visit.save();
+    if (status === 'Started') {
+      await NotificationService.notifyRepairStarted(customer.email, customer.phone, `Visit ID: ${visit._id}`);
+  }
     return { message: "Visit created successfully" };
   }
 
@@ -114,6 +118,10 @@ class VisitService {
     if (totalPrice) visit.totalPrice = totalPrice;
 
     await visit.save();
+    if (status === 'Completed') {
+      const customer = await Customer.findById(visit.customer);
+      await NotificationService.notifyRepairCompleted(customer.email, customer.phone, `Visit ID: ${visit._id}`);
+  }
     return { message: "Visit updated successfully" };
   }
 
